@@ -1,0 +1,19 @@
+name: Data Preprocessing
+description: Gabungkan FAQ dan intents menjadi satu dataset
+
+outputs:
+  - name: processed_data
+    type: Dataset
+
+implementation:
+  container:
+    image: enzostyan22/pipeline-chatbot:latest
+    command: ["python3", "/app/components/data_preprocessing/script.py"]
+    volumeMounts:
+      - mountPath: /home/jovyan
+        name: workspace-volume
+
+volumes:
+  - name: workspace-volume
+    persistentVolumeClaim:
+      claimName: pipelineops-workspace

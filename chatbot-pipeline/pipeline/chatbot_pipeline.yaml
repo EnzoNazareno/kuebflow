@@ -1,0 +1,164 @@
+# PIPELINE DEFINITION
+# Name: mental-health-chatbot-pipeline
+# Description: Pipeline MLOps chatbot skripsi dengan PVC /home/jovyan
+components:
+  comp-data-preprocessing:
+    executorLabel: exec-data-preprocessing
+    outputDefinitions:
+      artifacts:
+        processed_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+  comp-deploy-model:
+    executorLabel: exec-deploy-model
+    inputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-evaluate-model:
+    executorLabel: exec-evaluate-model
+    inputDefinitions:
+      artifacts:
+        data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+  comp-load-dataset:
+    executorLabel: exec-load-dataset
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      artifacts:
+        input_data:
+          artifactType:
+            schemaTitle: system.Dataset
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        model:
+          artifactType:
+            schemaTitle: system.Model
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-data-preprocessing:
+      container:
+        command:
+        - python3
+        - /app/components/data_preprocessing/script.py
+        image: enzostyan22/pipeline-chatbot:latest
+    exec-deploy-model:
+      container:
+        command:
+        - python3
+        - /app/components/deploy_model/script.py
+        - --model
+        - '{{$.inputs.artifacts[''model''].path}}'
+        image: enzostyan22/chatbot-pipeline:latest
+    exec-evaluate-model:
+      container:
+        command:
+        - python3
+        - /app/components/evaluate_model/script.py
+        - --model
+        - '{{$.inputs.artifacts[''model''].path}}'
+        - --data
+        - '{{$.inputs.artifacts[''data''].path}}'
+        image: enzostyan22/chatbot-pipeline:latest
+    exec-load-dataset:
+      container:
+        command:
+        - python3
+        - /app/components/load_dataset/script.py
+        image: enzostyan22/pipeline-chatbot:latest
+    exec-train-model:
+      container:
+        command:
+        - python3
+        - /app/components/train_model/script.py
+        - --input_data
+        - '{{$.inputs.artifacts[''input_data''].path}}'
+        - --output_path
+        - '{{$.outputs.artifacts[''model''].path}}'
+        image: enzostyan22/chatbot-pipeline:latest
+pipelineInfo:
+  description: Pipeline MLOps chatbot skripsi dengan PVC /home/jovyan
+  name: mental-health-chatbot-pipeline
+root:
+  dag:
+    tasks:
+      data-preprocessing:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-data-preprocessing
+        dependentTasks:
+        - load-dataset
+        taskInfo:
+          name: data-preprocessing
+      deploy-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-deploy-model
+        dependentTasks:
+        - train-model
+        inputs:
+          artifacts:
+            model:
+              taskOutputArtifact:
+                outputArtifactKey: model
+                producerTask: train-model
+        taskInfo:
+          name: deploy-model
+      evaluate-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-evaluate-model
+        dependentTasks:
+        - data-preprocessing
+        - train-model
+        inputs:
+          artifacts:
+            data:
+              taskOutputArtifact:
+                outputArtifactKey: processed_data
+                producerTask: data-preprocessing
+            model:
+              taskOutputArtifact:
+                outputArtifactKey: model
+                producerTask: train-model
+        taskInfo:
+          name: evaluate-model
+      load-dataset:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-load-dataset
+        taskInfo:
+          name: load-dataset
+      train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model
+        dependentTasks:
+        - data-preprocessing
+        inputs:
+          artifacts:
+            input_data:
+              taskOutputArtifact:
+                outputArtifactKey: processed_data
+                producerTask: data-preprocessing
+        taskInfo:
+          name: train-model
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.11.0

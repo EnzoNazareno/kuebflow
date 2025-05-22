@@ -1,0 +1,13 @@
+name: Train Model
+inputs:
+  - name: input_data
+    type: Dataset
+outputs:
+  - name: model
+    type: Model
+implementation:
+  container:
+    image: enzostyan22/chatbot-pipeline:latest
+    command: ["python3", "/app/components/train_model/script.py",
+              "--input_data", {inputPath: input_data},
+              "--output_path", {outputPath: model}]

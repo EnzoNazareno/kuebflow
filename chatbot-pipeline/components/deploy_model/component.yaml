@@ -1,0 +1,20 @@
+name: Deploy Model
+inputs:
+  - name: model
+    type: Model
+
+implementation:
+  container:
+    image: enzostyan22/chatbot-pipeline:latest
+    command: [
+      "python3", "/app/components/deploy_model/script.py",
+      "--model", {inputPath: model}
+    ]
+    volumeMounts:
+      - mountPath: /home/jovyan
+        name: workspace-volume
+
+volumes:
+  - name: workspace-volume
+    persistentVolumeClaim:
+      claimName: pipelineops-workspace

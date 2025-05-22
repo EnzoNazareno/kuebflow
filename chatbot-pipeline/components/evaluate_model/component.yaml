@@ -1,0 +1,23 @@
+name: Evaluate Model
+inputs:
+  - name: model
+    type: Model
+  - name: data
+    type: Dataset
+
+implementation:
+  container:
+    image: enzostyan22/chatbot-pipeline:latest
+    command: [
+      "python3", "/app/components/evaluate_model/script.py",
+      "--model", {inputPath: model},
+      "--data", {inputPath: data}
+    ]
+    volumeMounts:
+      - mountPath: /home/jovyan
+        name: workspace-volume
+
+volumes:
+  - name: workspace-volume
+    persistentVolumeClaim:
+      claimName: pipelineops-workspace

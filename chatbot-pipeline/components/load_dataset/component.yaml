@@ -1,0 +1,17 @@
+name: Load Dataset
+description: Load dataset from PVC
+
+outputs: []
+
+implementation:
+  container:
+    image: enzostyan22/pipeline-chatbot:latest
+    command: ["python3", "/app/components/load_dataset/script.py"]
+    volumeMounts:
+      - mountPath: /home/jovyan
+        name: workspace-volume
+
+volumes:
+  - name: workspace-volume
+    persistentVolumeClaim:
+      claimName: pipelineops-workspace
